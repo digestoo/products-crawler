@@ -9,7 +9,6 @@ from scrapy.selector import Selector
 
 import re
 import sys, traceback
-import slugify
 from bs4 import BeautifulSoup
 
 import extruct
@@ -138,7 +137,6 @@ class ProductsCrawler(scrapy.Spider):
                 if product == {}:
                     links = LinkExtractor().extract_links(response)         
                     for link in links:
-                        #link_slug = slugify.slugify(link.text)
                         if tldextract.extract(link.url)[1] == tldextract.extract(response.url)[1]:
                             yield Request(url=link.url)
                 else:

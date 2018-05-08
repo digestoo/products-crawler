@@ -1,5 +1,4 @@
 scrapy
-python-slugify
 twisted
 klein
 bs4
