@@ -1,0 +1,6 @@
+*.csv
+*.json
+resources/*.json
+logs
+logs/*
+products_crawler/logs/*

@@ -1,0 +1,7 @@
+scrapy
+python-slugify
+twisted
+klein
+bs4
+tldextract
+extruct
