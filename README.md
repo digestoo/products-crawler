@@ -18,7 +18,7 @@ Python3 or docker machine
 git clone git@github.com:digestoo/products-crawler.git
 cd products-crawler
 pip install -r requirements.txt
-cd ecommerce_crawler
+cd products_crawler
 python api.py
 ```
 
