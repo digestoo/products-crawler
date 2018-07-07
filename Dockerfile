@@ -12,4 +12,4 @@ WORKDIR  /usr/src/app/products_crawler
 
 CMD PYTHONPATH=${PWD} twistd -n web --class=api.resource
 
-EXPOSE 5005
+EXPOSE 5006
