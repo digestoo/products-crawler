@@ -16,6 +16,12 @@ import extruct
 import tldextract
 import lxml.html
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
+print('syspath',sys.path)
+
+from producturl import check_if_product_url
+
 def url_to_domain(url):
     p = tldextract.extract(url)
     if p.subdomain:
@@ -24,98 +30,20 @@ def url_to_domain(url):
         return '%s.%s'%(p.domain,p.suffix)
 
 
-
 tld = tldextract.TLDExtract(extra_suffixes=['com.ru'])
 
-
 from scrapy.linkextractors import LinkExtractor
-
-
-def parse_product_schema(product_details):
-    product = {}
-    product['name'] = product_details.get('name',None)
-    product['image'] = product_details.get('image',None)
-    if product['image'] is not None and isinstance(product['image'],str):
-        product['image'] = [product['image']]
-    product['brand'] = product_details.get('brand',None)
-    product['description'] = product_details.get('description',None)
-    product['itemCondition'] = product_details.get('itemCondition',None)
-    product['manufacturer'] = product_details.get('manufacturer',None)
-    product['color'] = product_details.get('color',None)
-    return product
-
-def parse_offers_schema(offers):
-    product = {}
-    product['price'] = offers.get('price',None)
-    product['availability'] = offers.get('availability',None)
-    if product['availability'] is not None and 'schema.org' in product['availability']:
-        product['availability'] = product['availability'].split('/')[3]
-    product['priceCurrency'] = offers.get('priceCurrency',None)
-    return product
-
-
-def get_products_details(text,url):
-    all_meta = extruct.extract(text,url)
-    product = {}
-    microdata = all_meta['microdata']
-    product_details = [x for x in microdata if x.get('type','').endswith('Product')]
-    if len(product_details) == 1:
-        product_details = product_details[0]['properties']
-        product.update(parse_product_schema(product_details))
-        
-        if 'offers' in  product_details:
-            offers = product_details['offers']
-            product['offers'] = []
-            if isinstance(offers,list):
-                for x in offers:
-                    product['offers'].append(parse_offers_schema(x['properties']))
-            else:
-                product['offers'].append(parse_offers_schema(offers['properties']))
-    
-    jsonld = all_meta['json-ld']
-    graphdetails = [x for x in jsonld if '@graph' in x]
-    if len(graphdetails)>0:
-        jsonld = graphdetails[0]['@graph']
-    product_details = [x for x in jsonld if x.get('@type','').endswith('Product')]
-    if len(product_details) == 1:
-        product_details = product_details[0]
-        product.update(parse_product_schema(product_details))
-        
-        if 'offers' in  product_details:
-            offers = product_details['offers']
-            product['offers'] = []
-            if isinstance(offers,list):
-                for x in offers:
-                    product['offers'].append(parse_offers_schema(x))
-            else:
-                product['offers'].append(parse_offers_schema(offers))
-        
-    if len(product) > 0:
-        breadcrumb_details = [x for x in microdata if x.get('type','').endswith('BreadcrumbList')]
-        if len(breadcrumb_details)>0:
-            breadcrumb_list = breadcrumb_details[0]['properties']['itemListElement']
-            product['category'] = ' // '.join([x['properties']['name'] for x in breadcrumb_list])
-        
-        breadcrumb_details = [x for x in jsonld if x.get('@type','').endswith('BreadcrumbList')]
-        
-        if len(breadcrumb_details)>0:
-            breadcrumb_list = breadcrumb_details[0]['itemListElement']
-            product['category'] = ' // '.join([x['item']['name'] for x in breadcrumb_list])
-    
-    return product
-
-
  
 class ProductsCrawler(scrapy.Spider):
     name = "products_crawler"
     custom_settings = {
-        'DEPTH_LIMIT':4,
+        'DEPTH_LIMIT':3,
         'DNS_TIMEOUT':5,
-        #'CLOSESPIDER_TIMEOUT':1,
+        # 'CLOSESPIDER_TIMEOUT':15,
         'LOG_ENABLED':True,
-        #'CLOSESPIDER_ITEMCOUNT': 1,
+        # 'CLOSESPIDER_ITEMCOUNT': 1000,
         'CONCURRENT_REQUEST':2,
-        'DOWNLOAD_TIMEOUT':10,
+        'DOWNLOAD_TIMEOUT':3,
         'RETRY_TIMES':1,
         'FEED_FORMAT':'json',
         'USER_AGENT':"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.102 Safari/537.36",
@@ -126,25 +54,28 @@ class ProductsCrawler(scrapy.Spider):
 
         'LOG_LEVEL':'DEBUG'
     }
-    #start_urls = ['https://supertipi.pl/']
+    #start_urls = ['https://supersklep.pl/']
+    #'https://www.eastend.pl/buty-adidas-deerupt-runner-cq2626-core-blackcore-blackftwr-white']
     
 
     def parse(self, response):
-            try:
-                
-                product = get_products_details(response.text, response.url)
+        bad_keywords = ['koszyk','basket','cart','faq','blog','login','news','aktualnosc','zakup','help','pomoc','regulamin']
+        links = LinkExtractor().extract_links(response) 
+        idx = 0        
+        for link in links:
+            ok = True
+            for keyword in bad_keywords:
+                if keyword  in link.url.lower():
+                    ok = False
+            if ok == False:
+                continue
 
-                if product == {}:
-                    links = LinkExtractor().extract_links(response)         
-                    for link in links:
-                        if tldextract.extract(link.url)[1] == tldextract.extract(response.url)[1]:
-                            yield Request(url=link.url)
+            if tldextract.extract(link.url)[1] == tldextract.extract(response.url)[1]:
+                idx+=1
+                product_score = check_if_product_url(link.url)
+
+                if product_score > 80:
+                    yield {'url':link.url, 'score': product_score}
                 else:
-                    product['url'] = response.url
-                    yield product
-
-            except Exception as e:
-                print(e)
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10, file=sys.stdout)
-
+                    if idx>10 and idx<20:
+                        yield Request(url=link.url)

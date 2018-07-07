@@ -2,7 +2,7 @@
 
 from klein import run, route, Klein
 app = Klein()
-
+import os
 
 import json
 from scrapy import signals
@@ -38,8 +38,8 @@ def return_spider_output(output):
 
 @app.route("/ecommerce/<domain>")
 def getdata(request,domain):
-    min_item_count = int(request.args.get(b'itemcount',[5])[0])
-    timeout = int(request.args.get(b'timeout',[20])[0])
+    min_item_count = int(request.args.get(b'itemcount',[10000])[0])
+    timeout = int(request.args.get(b'timeout',[10])[0])
 
     runner = MyCrawlerRunner({'CLOSESPIDER_ITEMCOUNT':min_item_count,
         'CLOSESPIDER_TIMEOUT':timeout})
@@ -49,6 +49,20 @@ def getdata(request,domain):
     
     return deferred
 
+
+
+
+# @app.route('/product-url', methods=['POST'])
+# def endpoint_check_if_product_url(request):
+#     content = json.loads(request.content.read())
+#     url = content['url']
+#     features = features_extract(url)
+#     product_score = predict_probability(product_url_clf,features)
+#     response = json.dumps({'score':product_score})
+#     return response
+
+
+
 resource = app.resource
 
-app.run("0.0.0.0", 5005)
+app.run("0.0.0.0", 5006)

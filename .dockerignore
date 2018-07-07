@@ -3,6 +3,8 @@
 *.csv
 *.json
 resources/*.json
+__pycache__
+__pycache__/*
 logs
 logs/*
 products_crawler/logs/*_
