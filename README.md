@@ -2,10 +2,6 @@
 
 Simple scraper to get products from eshop site.
 
-Currently supported:
-* json-ld parsing
-* microdata parsing
-
 ## Requirement
 
 Python3 or docker machine
@@ -26,13 +22,13 @@ python api.py
 
 ```bash
 docker pull mdruzkowski/products-crawler
-docker run -it -p 5005:5005 mdruzkowski/products-crawler
+docker run -it -p 5006:5006 mdruzkowski/products-crawler
 ```
 
 ## Making requests
 
 ```bash
-curl -XGET -H "Content-Type: application/json" http://localhost:5005/ecommerce/<domain>
+curl -XGET -H "Content-Type: application/json" http://localhost:5006/ecommerce/<domain>
 ```
 
 GET params:
@@ -45,5 +41,5 @@ Additional params:
 
 Example:
 ```bash
-curl -XGET -H "Content-Type: application/json" http://localhost:5005/ecommerce/eobuwie.com.pl?itemcount=1&timeout=5
+curl -XGET -H "Content-Type: application/json" http://localhost:5006/ecommerce/eobuwie.com.pl?itemcount=1&timeout=5
 ```
