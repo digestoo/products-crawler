@@ -54,9 +54,7 @@ class ProductsCrawler(scrapy.Spider):
 
         'LOG_LEVEL':'DEBUG'
     }
-    #start_urls = ['https://supersklep.pl/']
-    #'https://www.eastend.pl/buty-adidas-deerupt-runner-cq2626-core-blackcore-blackftwr-white']
-    
+
 
     def parse(self, response):
         bad_keywords = ['koszyk','basket','cart','faq','blog','login','news','aktualnosc','zakup','help','pomoc','regulamin']
